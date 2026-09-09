@@ -1,0 +1,8 @@
+node scanCommentsTable.js
+node scanItemVersionIndex.js
+node scanItemIndex.js
+node scanManagedMembersTable.js
+node scanMembersTable.js
+node scanTeamMembersTable.js
+node scanTeamsTable.js
+node scanTrialMembers.js
