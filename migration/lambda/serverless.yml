@@ -1,0 +1,391 @@
+service: BSafes-Serverless
+
+frameworkVersion: '^4.0.0'
+
+provider:
+  name: aws
+  profile: default
+  region: us-east-1
+  runtime: nodejs18.x
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "*"
+        - Effect: Allow
+          Action:
+            - 's3:GetObject'
+            - 's3:PutObject'
+          Resource:
+            - '*'
+        - Effect: Allow
+          Action:
+            - 'lambda:InvokeFunction'
+          Resource:
+            - '*'
+  environment:
+    isLocal: ${env:isLocal, false}
+    useOpenBSafes: false
+    s3Bucket: com.bsafes.s3objects
+    bSafesDynamodDBKey: ${file(.env/variables.json):bSafesDynamodDBKey}
+    clientEncryptionKey: ${file(.env/variables.json):clientEncryptionKey}
+    localhostAccessKeyId: ${file(.env/variables.json):localhostAccessKeyId}
+    localhostAccessKey: ${file(.env/variables.json):localhostAccessKey}
+    froalaLicenseKey: ${file(.env/variables.json):froalaLicenseKey}
+    stripePublishableKey: ${file(.env/variables.json):stripePublishableKey}
+    stripeSecretKey: ${file(.env/variables.json):stripeSecretKey}
+    stripeWebhookSigningSecret: ${file(.env/variables.json):stripeWebhookSigningSecret}
+    stripeLocalWebhookSigningSecret: ${file(.env/variables.json):stripeLocalWebhookSigningSecret}
+    wasabiAccesskeyId: ${file(.env/variables.json):wasabiAccesskeyId}
+    wasabiSecretAccessKey: ${file(.env/variables.json):wasabiSecretAccessKey}
+    serviceSessionKey: ${file(.env/variables.json):serviceSessionKey}
+    appleKeyId: ${file(.env/variables.json):appleKeyId}
+    appleKey: ${file(.env/variables.json):appleKey}
+    iosIssuerId: ${file(.env/variables.json):iosIssuerId}
+  httpApi:
+    cors:
+      allowedOrigins: ${self:custom.allowedOrigins}
+      allowedHeaders: # <-- Specify allowed headers
+        - Content-Type
+  timeout: ${env:lambdaTimeout, 6}
+package:
+  excludeDevDependencies: true
+plugins:
+  - serverless-offline
+functions:
+  WN_Account:
+    name: WN_Account
+    handler: src/account.handler
+    vpc: ${self:custom.vpc}
+    events:
+      - httpApi:
+          path: /api/keySetup
+          method: post
+      - httpApi:
+          path: /api/tmpWork
+          method: post
+      - httpApi:
+          path: /api/memberAPI/findMemberById
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getInvoice
+          method: post
+      - httpApi:
+          path: /api/memberAPI/createPaymentIntent
+          method: post
+      - httpApi:
+          path: /api/memberAPI/paymentCompleted
+          method: post
+      - httpApi:
+          path: /api/serviceAPI/stripeWebhook
+          method: post
+      - httpApi:
+          path: /api/memberAPI/createApplePaymentIntent
+          method: post
+      - httpApi:
+          path: /api/memberAPI/reportAnAppleTransaction
+          method: post
+      - httpApi:
+          path: /api/serviceAPI/appleWebhook
+          method: post
+      - httpApi:
+          path: /api/serviceAPI/appleSandboxWebhook
+          method: post
+      - httpApi:
+          path: /api/memberAPI/createAndroidPaymentIntent
+          method: post
+      - httpApi:
+          path: /api/memberAPI/reportAnAndroidPurchase
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getTransactions
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getMFAData
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyMFASetupToken
+          method: post
+      - httpApi:
+          path: /api/memberAPI/deleteMFA
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyAccountHash
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getDataCenters
+          method: post
+      - httpApi:
+          path: /api/memberAPI/changeDataCenter
+          method: post  
+  WN_Auth:
+    name: WN_Auth
+    handler: src/auth.handler
+    vpc: ${self:custom.vpc}
+    events:
+      - httpApi:
+          path: /api/memberAPI/preflight
+          method: post
+      - httpApi:
+          path: /api/logIn
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyChallenge
+          method: post
+      - httpApi:
+          path: /api/memberAPI/logOut
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyMFAToken
+          method: post
+      - httpApi:
+          path: /api/memberAPI/recoverMFA
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getBackupToken
+          method: post    
+      - httpApi:
+          path: /api/memberAPI/tmpAPI
+          method: post    
+  WN_Diary:
+    name: WN_Diary
+    handler: src/diary.handler
+    vpc: ${self:custom.vpc} 
+    events:
+       - httpApi:
+          path: /api/memberAPI/createADiaryPage
+          method: post
+  WN_Folder:
+    name: WN_Folder
+    handler: src/folder.handler
+    vpc: ${self:custom.vpc} 
+    events:
+       - httpApi:
+          path: /api/memberAPI/getNextFolderPage
+          method: post
+       - httpApi:
+          path: /api/memberAPI/getPreviousFolderPage
+          method: post
+  WN_Items:
+    name: WN_Items
+    handler: src/items.handler
+    vpc: ${self:custom.vpc}
+    events:
+      - httpApi:
+          path: /api/memberAPI/createNewItemVersion
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getItemVersionsHistory
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getItemPath
+          method: post
+  WN_ItemVersionsIndexer:
+    name: WN_ItemVersionsIndexer
+    handler: src/itemVersionsIndexer.handler
+    vpc: ${self:custom.vpc}
+    environment:
+      searchEndpoint: ${env:searchEndpoint}
+    events:
+      - stream:
+          type: dynamodb
+          arn: ${env:itemVersionsV2StreamArn}
+          batchSize: 100
+          startingPosition: LATEST
+          filterPatterns:
+            - eventName: [MODIFY]
+          functionResponseType: ReportBatchItemFailures
+  WN_Notebook:
+    name: WN_Notebook
+    handler: src/notebook.handler
+    vpc: ${self:custom.vpc} 
+    events:
+       - httpApi:
+          path: /api/memberAPI/createANotebookPage
+          method: post
+  WN_Pages:
+    name: WN_Pages
+    handler: src/pages.handler
+    vpc: ${self:custom.vpc} 
+    events:
+      - httpApi:
+          path: /api/memberAPI/getPageItem
+          method: post
+      - httpApi:
+          path: /api/memberAPI/updateLastAccessedPage
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getPageComments
+          method: post
+      - httpApi:
+          path: /api/memberAPI/saveNewPageComment
+          method: post
+      - httpApi:
+          path: /api/memberAPI/updatePageComment
+          method: post
+  WN_S3Objects:
+    name: WN_S3Objects
+    handler: src/s3Objects.handler
+    vpc: ${self:custom.vpc} 
+    events:
+      - httpApi:
+          path: /api/memberAPI/preS3Upload
+          method: post 
+      - httpApi:
+          path: /api/memberAPI/preS3Download
+          method: post   
+      - httpApi:
+          path: /api/memberAPI/preS3ChunkUpload
+          method: post   
+      - httpApi:
+          path: /api/memberAPI/preS3ChunkDownload
+          method: post   
+  WN_Safe:
+    name: WN_Safe
+    handler: src/safe.handler
+    vpc: ${self:custom.vpc} 
+    events:
+      - httpApi:
+          path: /api/memberAPI/addAnItemOnTop
+          method: post
+      - httpApi:
+          path: /api/memberAPI/addAnItemBefore
+          method: post
+      - httpApi:
+          path: /api/memberAPI/addAnItemAfter
+          method: post
+      - httpApi:
+          path: /api/memberAPI/listItems
+          method: post
+      - httpApi:
+          path: /api/memberAPI/listContainers
+          method: post
+      - httpApi:
+          path: /api/memberAPI/search
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getPreviousItem
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getNextItem
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getFirstItemInContainer
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getLastItemInContainer
+          method: post
+      - httpApi:
+          path: /api/memberAPI/dropAnItemInside
+          method: post
+      - httpApi:
+          path: /api/memberAPI/dropAnItemBefore
+          method: post
+      - httpApi:
+          path: /api/memberAPI/dropAnItemAfter
+          method: post
+      - httpApi:
+          path: /api/memberAPI/trashAnItem
+          method: post
+      - httpApi:
+          path: /api/memberAPI/emptyATrashBoxItem
+          method: post
+      - httpApi:
+          path: /api/memberAPI/restoreAnItemFromTrash
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getTrashBox
+          method: post
+      - httpApi:
+          path: /api/memberAPI/listActivities
+          method: post
+  WN_Team:
+    name: WN_Team
+    handler: src/teams.handler
+    vpc: ${self:custom.vpc} 
+    events:
+      - httpApi:
+          path: /api/memberAPI/createANewTeam
+          method: post
+      - httpApi:
+          path: /api/memberAPI/listTeams
+          method: post
+      - httpApi:
+          path: /api/memberAPI/cacheTeamNameForTeamMember
+          method: post
+      - httpApi:
+          path: /api/memberAPI/getTeamData
+          method: post
+      - httpApi:
+          path: /api/memberAPI/addATeamMember
+          method: post
+      - httpApi:
+          path: /api/memberAPI/deleteATeamMember
+          method: post
+      - httpApi:
+          path: /api/memberAPI/listTeamMembers
+          method: post
+  WN_V1Account:
+    name: WN_V1Account
+    handler: src/v1Account.handler
+    vpc: ${self:custom.vpc} 
+    events:
+      - httpApi:
+          path: /api/nicknameSignIn
+          method: post
+      - httpApi:
+          path: /api/authenticateManagedMember
+          method: post
+      - httpApi:
+          path: /api/verifyMFAToken
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyV1KeyHash
+          method: post
+      - httpApi:
+          path: /api/memberAPI/verifyV1Challenge
+          method: post
+      - httpApi:
+          path: /api/memberAPI/lock
+          method: post
+      - httpApi:
+          path: /api/memberAPI/signOut
+          method: post
+  WN_Usage:
+    name: WN_Usage
+    handler: src/usage.handler
+    vpc: ${self:custom.vpc}
+  WN_ProxyRequest:
+    name: WN_ProxyRequest
+    handler: src/proxyRequest.handler
+    environment:
+      stripeSecretKey: ${file(.env/variables.json):stripeSecretKey}
+      appleKeyId: ${file(.env/variables.json):appleKeyId}
+      appleKey: ${file(.env/variables.json):appleKey}
+      iosIssuerId: ${file(.env/variables.json):iosIssuerId}
+  WN_S3Manager:
+    name: WN_S3Manager
+    handler: src/s3Manager.handler
+    events:
+      - httpApi:
+          path: /api/memberAPI/postS3Upload
+          method: post  
+custom:
+  allowedOrigins:
+    - "*"
+  vpc: 
+    securityGroupIds:
+      - sg-0e2f96be47f1d1985
+    subnetIds:
+      - subnet-3da6c958
+      - subnet-d16576fa
+      - subnet-bc873d81

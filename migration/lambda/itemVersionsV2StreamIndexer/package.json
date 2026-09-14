@@ -1,0 +1,10 @@
+{
+  "name": "item-versions-v2-stream-indexer",
+  "version": "1.0.0",
+  "description": "DynamoDB Streams lambda that indexes MODIFY events from com.bsafes.itemVersionsV2 into the itemversion OpenSearch index",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/util-dynamodb": "^3.600.0",
+    "@opensearch-project/opensearch": "^3.6.0"
+  }
+}
