@@ -23,13 +23,13 @@ var dynamodbDoc = DynamoDBDocumentClient.from(ddbClient);
 var keyVersionArg = process.argv[2];
 if (keyVersionArg === undefined) {
   console.error("Missing required keyVersion argument.");
-  console.error("Usage: node scanItemVersionsV2TimeStampIndex.js <keyVersion> [timeStamp]");
+  console.error("Usage: node scanItemVersionsIndex.js <keyVersion> [timeStamp]");
   process.exit(1);
 }
 var KEY_VERSION_VALUE = Number(keyVersionArg);
 if (!Number.isInteger(KEY_VERSION_VALUE)) {
   console.error("Invalid keyVersion argument:", JSON.stringify(keyVersionArg), "- must be an integer.");
-  console.error("Usage: node scanItemVersionsV2TimeStampIndex.js <keyVersion> [timeStamp]");
+  console.error("Usage: node scanItemVersionsIndex.js <keyVersion> [timeStamp]");
   process.exit(1);
 }
 
@@ -65,7 +65,7 @@ var POLL_INTERVAL_MS = 1000; // once caught up, how often to check for new items
 
 // Where we remember the last page boundary so an aborted run can resume later.
 // Keyed by keyVersion so runs for different keyVersions don't clobber each other's progress.
-var CHECKPOINT_FILE = path.join(__dirname, "scanItemVersionsV2TimeStampIndex.keyVersion-" + KEY_VERSION_VALUE + ".checkpoint.json");
+var CHECKPOINT_FILE = path.join(__dirname, "scanItemVersionsIndex.keyVersion-" + KEY_VERSION_VALUE + ".checkpoint.json");
 
 function loadCheckpoint() {
   try {

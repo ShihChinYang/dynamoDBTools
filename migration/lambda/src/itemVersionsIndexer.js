@@ -1,7 +1,7 @@
 // DynamoDB Streams handler for com.bsafes.itemVersionsV2.
 // Only MODIFY events are indexed - the stream's NewImage is the whole item
 // after the modification, so it's indexed as-is into the 'itemversion'
-// OpenSearch index (same document shape as the migration/scanItemVersionsV2TimeStampIndex.js tool).
+// OpenSearch index (same document shape as the migration/scanItemVersionsIndex.js tool).
 const { unmarshall } = require("@aws-sdk/util-dynamodb");
 const { Client } = require("@opensearch-project/opensearch");
 

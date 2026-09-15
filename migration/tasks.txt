@@ -1,0 +1,5 @@
+curl http://localhost:9200
+localBSafes=true node scanItemVersionsIndex.js 1
+localBSafes=true node scanItemVersionsIndex.js 3
+localBSafes=true node scanItemIndex.js 1
+localBSafes=true node scanItemIndex.js 3
